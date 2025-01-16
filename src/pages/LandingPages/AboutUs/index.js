@@ -9,7 +9,7 @@ import Information from "pages/LandingPages/AboutUs/sections/Information";
 import Featuring from "pages/LandingPages/AboutUs/sections/Featuring";
 import Newsletter from "pages/LandingPages/AboutUs/sections/Newsletter";
 import footerRoutes from "footer.routes";
-import bgImage from "assets/images/bg-about-us.jpg";
+import bgImage from "assets/images/tnt-3.jpeg";
 
 function AboutUs() {
   return (
