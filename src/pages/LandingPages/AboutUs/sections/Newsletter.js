@@ -1,60 +1,73 @@
 /* eslint-disable react/jsx-no-duplicate-props */
 import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
-import PropTypes from "prop-types";
-
-// Material Kit 2 React components
 import MKBox from "components/MKBox";
 import MKTypography from "components/MKTypography";
 import MKInput from "components/MKInput";
 import MKButton from "components/MKButton";
-import { AdvancedMarker, APIProvider } from "@vis.gl/react-google-maps";
-import { Map, Pin } from "@vis.gl/react-google-maps";
 
-// Images
-// import macbook from "assets/images/macbook.png";MapCameraChangedEvent
+import { MapContainer, Marker, TileLayer, Popup, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css"; 
+import { useState } from "react";
+import L from "leaflet";
 
-const locations = [
-  { key: "operaHouse", location: { lat: -33.8567844, lng: 151.213108 } },
-  { key: "tarongaZoo", location: { lat: -33.8472767, lng: 151.2188164 } },
-  { key: "manlyBeach", location: { lat: -33.8209738, lng: 151.2563253 } },
-  { key: "hyderPark", location: { lat: -33.8690081, lng: 151.2052393 } },
-  { key: "theRocks", location: { lat: -33.8587568, lng: 151.2058246 } },
-  { key: "circularQuay", location: { lat: -33.858761, lng: 151.2055688 } },
-  { key: "harbourBridge", location: { lat: -33.852228, lng: 151.2038374 } },
-  { key: "kingsCross", location: { lat: -33.8737375, lng: 151.222569 } },
-  { key: "botanicGardens", location: { lat: -33.864167, lng: 151.216387 } },
-  { key: "museumOfSydney", location: { lat: -33.8636005, lng: 151.2092542 } },
-  { key: "maritimeMuseum", location: { lat: -33.869395, lng: 151.198648 } },
-  { key: "kingStreetWharf", location: { lat: -33.8665445, lng: 151.1989808 } },
-  { key: "aquarium", location: { lat: -33.869627, lng: 151.202146 } },
-  { key: "darlingHarbour", location: { lat: -33.87488, lng: 151.1987113 } },
-  { key: "barangaroo", location: { lat: -33.8605523, lng: 151.1972205 } },
-];
+const customIcon = new L.Icon({
+  iconUrl: require("assets/images/placeholder.png"),
+  iconSize: [25, 25], 
+});
 
-const PoiMarkers = ({ pois }) => (
-  <>
-    {pois.map((poi) => (
-      <AdvancedMarker key={poi.key} position={poi.location}>
-        <Pin background={"#FBBC04"} glyphColor={"#000"} borderColor={"#000"} />
-      </AdvancedMarker>
-    ))}
-  </>
-);
-
-PoiMarkers.propTypes = {
-  pois: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string.isRequired,
-      location: PropTypes.shape({
-        lat: PropTypes.number.isRequired,
-        lng: PropTypes.number.isRequired,
-      }).isRequired,
-    })
-  ).isRequired,
-};
+const userIcon = new L.Icon({
+  iconUrl: require("assets/images/marker-icon.png"), 
+  iconSize: [15, 25], 
+})
 
 function Newsletter() {
+  const [position, setPosition] = useState([9.3077, 2.3158]); 
+  const [latitude, setLatitude] = useState(""); 
+  const [longitude, setLongitude] = useState(""); 
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        setLatitude(latitude.toFixed(6));
+        setLongitude(longitude.toFixed(6));
+        setPosition([latitude, longitude]); 
+      });
+    } else {
+      console.log("La géolocalisation n'est pas supportée par ce navigateur.");
+    }
+  };
+
+  const SelectLocationOnMap = () => {
+    useMapEvents({
+      click: (e) => {
+        const { lat, lng } = e.latlng;
+        setLatitude(lat.toFixed(6));
+        setLongitude(lng.toFixed(6));
+        setPosition([lat, lng]);
+      },
+    });
+    return null;
+  };
+
+  const antennes = [
+    { name: "Cotonou", coordinates: [6.3703, 2.3912] },
+    { name: "Porto-Novo", coordinates: [6.4969, 2.6289] },
+    { name: "Parakou", coordinates: [9.337, 2.6303] },
+    { name: "Abomey", coordinates: [7.1829, 1.9912] },
+    { name: "Natitingou", coordinates: [10.3049, 1.3785] },
+  ];
+
+  const handleValidation = () => {
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+  
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setPosition([lat, lng]);
+    }
+  };
+
   return (
     <MKBox component="section" pt={6} my={6}>
       <Container>
@@ -62,42 +75,72 @@ function Newsletter() {
           <Grid item md={6} sx={{ ml: { xs: 0, lg: 3 }, mb: { xs: 12, md: 0 } }}>
             <MKTypography variant="h4">Entrez vos coordonnées</MKTypography>
             <MKTypography variant="body2" color="text" mb={3}>
-              Renseignez votre adresse ou vos coordonnées GPS afin que nous puissions identifier
+              Renseignez vos coordonnées GPS afin que nous puissions identifier
               l&apos;antenne TNT la plus proche.
             </MKTypography>
             <Grid container spacing={1}>
               <Grid item xs={6}>
-                <MKInput type="text" label="Adresse" fullWidth />
+                <MKInput
+                  id="latitude-input"
+                  type="text"
+                  label="Latitude"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  disabled={!latitude}
+                  fullWidth
+                />
               </Grid>
-              <Grid item xs={3}>
-                <MKInput type="text" label="Latitude" fullWidth />
+              <Grid item xs={5}>
+                <MKInput
+                  id="longitude-input"
+                  type="text"
+                  label="Longitude"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  disabled={!longitude}
+                  fullWidth
+                />
               </Grid>
-              <Grid item xs={3}>
-                <MKInput type="text" label="Longitude" fullWidth />
-              </Grid>
-              <Grid item xs={12} mt={2}>
-                <MKButton variant="gradient" color="info" fullWidth>
+              <Grid item xs={4} mt={2}>
+                <MKButton variant="gradient" color="info" fullWidth onClick={handleValidation}>
                   Valider
+                </MKButton>
+              </Grid>
+              <Grid item xs={5} mt={2}>
+                <MKButton variant="gradient" color="primary" fullWidth onClick={getCurrentLocation}>
+                  Utiliser ma position actuelle
                 </MKButton>
               </Grid>
             </Grid>
           </Grid>
+
           <Grid item xs={12} md={5} sx={{ ml: "auto" }}>
-            <APIProvider
-              apiKey={"AIzaSyCOJZWlJgNneA_zYCK1pI0IOlS2FW0kfzM"}
-              onLoad={() => console.log("Maps API has loaded.")}
+            <MapContainer
+              center={position} 
+              zoom={6} 
+              minZoom={4} 
+              maxBounds={[[5, -1.5], [13, 4.5]]} 
+              style={{ height: "400px", width: "100%" }}
             >
-              <Map
-                defaultZoom={13}
-                defaultCenter={{ lat: -33.860664, lng: 151.208138 }}
-                mapId="da37f3254c6a6d1c"
-                onCameraChanged={(ev) =>
-                  console.log("camera changed:", ev.detail.center, "zoom:", ev.detail.zoom)
-                }
-              >
-                <PoiMarkers pois={locations} />
-              </Map>
-            </APIProvider>
+              <TileLayer
+                attribution=''
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {/* Markers for multiple antennes in Bénin */}
+              {antennes.map((antenne, index) => (
+                <Marker key={index} position={antenne.coordinates} icon={customIcon}>
+                  <Popup>{antenne.name}</Popup>
+                </Marker>
+              ))}
+
+              {/* Marker for user-selected position */}
+              <Marker position={position} icon={userIcon}>
+                <Popup>Position sélectionnée: {position[0]}, {position[1]}</Popup>
+              </Marker>
+
+              <SelectLocationOnMap />
+            </MapContainer>
           </Grid>
         </Grid>
 
@@ -114,7 +157,7 @@ function Newsletter() {
                 borderRadius: "8px",
               }}
             >
-              {/* Placeholder pour les résultats */}
+              {/* Section pour les résultats */}
               <MKTypography variant="body2" color="text">
                 Les informations sur l&apos;antenne la plus proche s&apos;afficheront ici une fois
                 les coordonnées validées.
